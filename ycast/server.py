@@ -132,6 +132,167 @@ def upstream(path):
     logging.error("Unhandled upstream query (/setupapp/%s)", path)
     abort(404)
 
+
+# Wistron/Sagem RM50 specific routes
+@app.route('/setupapp/wistron/asp/browsexpa/loginXML.asp',
+           methods=['GET', 'POST'])
+@app.route('/setupapp/Wistron/asp/browsexpa/loginXML.asp',
+           methods=['GET', 'POST'])
+def wistron_login():
+    logging.debug('Wistron/Sagem RM50 login request')
+    xml_response = '''<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<EncryptedToken>0000000000000000</EncryptedToken>'''
+    response = make_response(xml_response)
+    response.headers['Content-Type'] = 'text/xml; charset=utf-8'
+    return response
+
+
+@app.route('/setupapp/wistron/asp/browsexpa/FavXML.asp',
+           methods=['GET', 'POST'])
+@app.route('/setupapp/Wistron/asp/browsexpa/FavXML.asp',
+           methods=['GET', 'POST'])
+def wistron_favorites():
+    logging.debug('Wistron/Sagem RM50 favorites request')
+    
+    # Get all stations from all categories
+    all_stations = []
+    categories = my_stations.get_category_directories()
+    for category in categories:
+        stations = my_stations.get_stations_by_category(category.name)
+        all_stations.extend(stations)
+    
+    xml_response = '''<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+
+<ListOfItems>
+<ItemCount>{}</ItemCount>
+
+'''.format(len(all_stations))
+    
+    if all_stations:
+        for i, station in enumerate(all_stations, 1):
+            xml_response += '''<Item>
+<ItemType>Station</ItemType>
+<StationId>{:02d}</StationId>
+<StationName>{}</StationName>
+<StationUrl>{}</StationUrl>
+<StationDesc>Meine manuelle Radioliste - {}</StationDesc>
+<StationFormat>Internetradio</StationFormat>
+<StationLocation>Germany</StationLocation>
+<StationBandWidth>128</StationBandWidth>
+<StationMime>MP3</StationMime>
+</Item>
+
+'''.format(i, station.name, station.url, station.name)
+    
+    xml_response += '</ListOfItems>'
+    
+    response = make_response(xml_response)
+    response.headers['Content-Type'] = 'text/xml; charset=utf-8'
+    return response
+
+
+@app.route('/setupapp/wistron/asp/browsexpa/AFavXML.asp',
+           methods=['GET', 'POST'])
+@app.route('/setupapp/Wistron/asp/browsexpa/AFavXML.asp',
+           methods=['GET', 'POST'])
+def wistron_afavorites():
+    logging.debug('Wistron/Sagem RM50 AFavorites request')
+    xml_response = '''<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<ListOfItems>
+<ItemCount>0</ItemCount>
+</ListOfItems>'''
+    response = make_response(xml_response)
+    response.headers['Content-Type'] = 'text/xml; charset=utf-8'
+    return response
+
+
+@app.route('/setupapp/wistron/asp/Browsexpa/Search.asp',
+           methods=['GET', 'POST'])
+@app.route('/setupapp/Wistron/asp/Browsexpa/Search.asp',
+           methods=['GET', 'POST'])
+def wistron_search():
+    search_type = request.args.get('sSearchtype', '')
+    search_term = request.args.get('Search', '')
+    logging.debug(f'Wistron/Sagem RM50 Search request - Type: {search_type}, Term: {search_term}')
+    
+    stations = []
+    if search_term:
+        if search_type == '1':  # Station name search
+            stations = radiobrowser.search(search_term, limit=50)
+        elif search_type == '2':  # Genre search
+            stations = radiobrowser.get_stations_by_genre(search_term)
+        elif search_type == '3':  # Location search
+            stations = radiobrowser.get_stations_by_country(search_term)
+        else:  # Default to name search
+            stations = radiobrowser.search(search_term, limit=50)
+    
+    xml_response = '''<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<ListOfItems>
+<ItemCount>{}</ItemCount>
+'''.format(len(stations))
+    
+    for i, station in enumerate(stations, 1):
+        xml_response += '''
+<Item>
+<ItemType>Station</ItemType>
+<StationId>{:02d}</StationId>
+<StationName>{}</StationName>
+<StationUrl>{}</StationUrl>
+<StationDesc>Search result - {}</StationDesc>
+<StationFormat>Internetradio</StationFormat>
+<StationLocation>{}</StationLocation>
+<StationBandWidth>128</StationBandWidth>
+<StationMime>MP3</StationMime>
+</Item>
+'''.format(i, station.name, station.url, station.name, station.countrycode or 'Unknown')
+    
+    xml_response += '</ListOfItems>'
+    
+    response = make_response(xml_response)
+    response.headers['Content-Type'] = 'text/xml; charset=utf-8'
+    return response
+
+
+@app.route('/setupapp/wistron/asp/func/dynamOD.asp',
+           methods=['GET', 'POST'])
+@app.route('/setupapp/Wistron/asp/func/dynamOD.asp',
+           methods=['GET', 'POST'])
+def wistron_dynamod():
+    logging.debug('Wistron/Sagem RM50 DynamOD request')
+    # Return empty response for dynamic content requests
+    response = make_response('')
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
+
+# Legacy Sagem routes (keep for backward compatibility)
+@app.route('/setupapp/sagem/asp/BrowseXML/loginXML.asp',
+           methods=['GET', 'POST'])
+def sagem_login():
+    logging.debug('Sagem RM50 login request (legacy)')
+    return wistron_login()
+
+
+@app.route('/setupapp/sagem/asp/BrowseXML/navXML.asp',
+           methods=['GET', 'POST'])
+def sagem_nav():
+    logging.debug('Sagem RM50 navigation request (legacy)')
+    return my_stations_landing()
+
+
+@app.route('/setupapp/sagem/asp/BrowseXML/FavXML.asp',
+           methods=['GET', 'POST'])
+def sagem_favorites():
+    logging.debug('Sagem RM50 favorites request (legacy)')
+    return wistron_favorites()
+
+
+@app.route('/setupapp/sagem/asp/BrowseXML/statxml.asp',
+           methods=['GET', 'POST'])
+def sagem_station():
+    logging.debug('Sagem RM50 station info request (legacy)')
+    return get_station_info()
+
 @app.route('/api/<path:path>',
            methods=['GET', 'POST'])
 def landing_api(path):

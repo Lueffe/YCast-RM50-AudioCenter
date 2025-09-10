@@ -1,8 +1,9 @@
 import base64
 import uuid
 import logging
-import http.client
+import urllib.parse
 import json
+import http.client
 from urllib.parse import urlparse
 
 from ycast import __version__
@@ -27,9 +28,10 @@ class Station:
             base64.urlsafe_b64encode(uuid.UUID(self.stationuuid).bytes).decode(), ID_PREFIX)
         self.name = generic.get_json_attr(station_json, 'name')
 
-        self.url = generic.get_json_attr(station_json, 'url_resolved')
+        # Use original URL instead of resolved URL to avoid HTTPS redirects
+        self.url = generic.get_json_attr(station_json, 'url')
         if not self.url:
-            self.url = generic.get_json_attr(station_json, 'url')
+            self.url = generic.get_json_attr(station_json, 'url_resolved')
 
         self.icon = generic.get_json_attr(station_json, 'favicon')
         self.description = generic.get_json_attr(station_json, 'tags')
@@ -145,44 +147,85 @@ def get_genre_directories():
 
 def get_stations_by_country(country):
     stations = []
-    stations_json = request('stations/search?order=name&reverse=false&countryExact=true&country=' + str(country))
+    # URL-encode the country parameter to handle spaces and special characters
+    encoded_country = urllib.parse.quote(str(country))
+    stations_json = request('stations/search?order=name&reverse=false&country=' + encoded_country)
+    logging.info(f'Radio-Browser API returned {len(stations_json)} stations for country {country}')
+    
+    filtered_count = 0
     for station_json in stations_json:
         if SHOW_BROKEN_STATIONS or get_json_attr(station_json, 'lastcheckok') == 1:
-            stations.append(Station(station_json))
+            station_url = get_json_attr(station_json, 'url')
+            station_name = get_json_attr(station_json, 'name')
+            logging.debug(f'Station: {station_name} - URL: {station_url}')
+            
+            if station_url and station_url.startswith('http://'):
+                stations.append(Station(station_json))
+                logging.debug(f'✓ Added HTTP station: {station_name}')
+            else:
+                filtered_count += 1
+                logging.debug(f'✗ Filtered out non-HTTP station: {station_name} - {station_url}')
+    
+    logging.info(f'Filtered out {filtered_count} non-HTTP stations, returning {len(stations)} HTTP stations')
     return stations
 
 
 def get_stations_by_language(language):
     stations = []
-    stations_json = request('stations/search?order=name&reverse=false&languageExact=true&language=' + str(language))
+    # Remove languageExact=true to allow partial matching
+    stations_json = request('stations/search?codec=MP3&url=http&order=name&reverse=false&language=' + str(language))
     for station_json in stations_json:
         if SHOW_BROKEN_STATIONS or get_json_attr(station_json, 'lastcheckok') == 1:
-            stations.append(Station(station_json))
+            station_url = get_json_attr(station_json, 'url')
+            if station_url and station_url.startswith('http://'):
+                stations.append(Station(station_json))
     return stations
 
 
 def get_stations_by_genre(genre):
     stations = []
-    stations_json = request('stations/search?order=name&reverse=false&tagExact=true&tag=' + str(genre))
+    # Convert to lowercase and URL-encode the genre parameter
+    encoded_genre = urllib.parse.quote(str(genre).lower())
+    stations_json = request('stations/search?order=name&reverse=false&tag=' + encoded_genre)
+    logging.info(f'Radio-Browser API returned {len(stations_json)} stations for genre {genre}')
+    
+    filtered_count = 0
     for station_json in stations_json:
         if SHOW_BROKEN_STATIONS or get_json_attr(station_json, 'lastcheckok') == 1:
-            stations.append(Station(station_json))
+            station_url = get_json_attr(station_json, 'url')
+            station_name = get_json_attr(station_json, 'name')
+            logging.debug(f'Station: {station_name} - URL: {station_url}')
+            
+            if station_url and station_url.startswith('http://'):
+                stations.append(Station(station_json))
+                logging.debug(f'✓ Added HTTP station: {station_name}')
+            else:
+                filtered_count += 1
+                logging.debug(f'✗ Filtered out non-HTTP station: {station_name} - {station_url}')
+    
+    logging.info(f'Filtered out {filtered_count} non-HTTP stations, returning {len(stations)} HTTP stations for genre {genre}')
     return stations
 
 
 def get_stations_by_votes(limit=DEFAULT_STATION_LIMIT):
     stations = []
-    stations_json = request('stations?order=votes&reverse=true&limit=' + str(limit))
+    stations_json = request('stations/search?codec=MP3&url=http&order=votes&reverse=true&limit=' + str(limit))
     for station_json in stations_json:
         if SHOW_BROKEN_STATIONS or get_json_attr(station_json, 'lastcheckok') == 1:
-            stations.append(Station(station_json))
+            station_url = get_json_attr(station_json, 'url')
+            if station_url and station_url.startswith('http://'):
+                stations.append(Station(station_json))
     return stations
 
 
 def search(name, limit=DEFAULT_STATION_LIMIT):
     stations = []
-    stations_json = request('stations/search?order=name&reverse=false&limit=' + str(limit) + '&name=' + str(name))
+    # URL-encode the name parameter to handle spaces and special characters
+    encoded_name = urllib.parse.quote(str(name))
+    stations_json = request('stations/search?order=name&reverse=false&limit=' + str(limit) + '&name=' + encoded_name)
     for station_json in stations_json:
         if SHOW_BROKEN_STATIONS or get_json_attr(station_json, 'lastcheckok') == 1:
-            stations.append(Station(station_json))
+            station_url = get_json_attr(station_json, 'url')
+            if station_url and station_url.startswith('http://'):
+                stations.append(Station(station_json))
     return stations

@@ -1,0 +1,14 @@
+[Unit]
+Description=YCast Internet Radio Server for Sagem RM50 AudioCenter
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/YCastLocal
+ExecStart=/usr/bin/python3 -m ycast
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
