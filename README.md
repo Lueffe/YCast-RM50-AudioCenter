@@ -1,23 +1,30 @@
 <img src="https://image.ibb.co/iBY6hq/yamaha.png" width="600">
 
-# YCast (advanced)
+# YCast for Sagem RM50 AudioCenter
 
-[![PyPI latest version](https://img.shields.io/pypi/v/ycast?color=success)](https://pypi.org/project/ycast/) [![GitHub latest version](https://img.shields.io/github/v/release/milaq/YCast?color=success&label=github&sort=semver)](https://github.com/milaq/YCast/releases) [![Python version](https://img.shields.io/pypi/pyversions/ycast)](https://www.python.org/downloads/) [![License](https://img.shields.io/pypi/l/ycast)](https://www.gnu.org/licenses/gpl-3.0.en.html) [![GitHub issues](https://img.shields.io/github/issues/milaq/ycast)](https://github.com/milaq/YCast/issues)
+[![GitHub latest version](https://img.shields.io/github/v/release/Lueffe/YCast-RM50-AudioCenter?color=success&label=github&sort=semver)](https://github.com/Lueffe/YCast-RM50-AudioCenter/releases) [![Python version](https://img.shields.io/pypi/pyversions/ycast)](https://www.python.org/downloads/) [![License](https://img.shields.io/pypi/l/ycast)](https://www.gnu.org/licenses/gpl-3.0.en.html) [![GitHub issues](https://img.shields.io/github/issues/Lueffe/YCast-RM50-AudioCenter)](https://github.com/Lueffe/YCast-RM50-AudioCenter/issues)
 
-[Download from GitHub](https://github.com/THanika/YCast/releases)
+[Download from GitHub](https://github.com/Lueffe/YCast-RM50-AudioCenter/releases)
 
-[Issue tracker](https://github.com/THanika/YCast/issues)
+[Issue tracker](https://github.com/Lueffe/YCast-RM50-AudioCenter/issues)
 
-#### pip3 install git+https://github.com/ThHanika/YCast
+#### pip3 install git+https://github.com/Lueffe/YCast-RM50-AudioCenter
 
-### The advanced feature:
-* Icons in my favorites list 'stations.yml' (the icon URL can be appended after the pipe character '|')
-* recently visited radio stations are stored in /.yast/resently.yml (compatible with stations.yml, for easy editing of your favorites and pasting into stations.yml)
-* global filter/limits configurable file ./ycast/filter.yml (with this you can globally reduce the radio stations according to your interests). The filter can be modified at runtime useing a REST API (/control/filter...), see below.
-* 5 frequently used radio stations can be selected on the target page (self-learning algorithm based on frequency of station selection)
-* web frontend to setup your favorites
+## 🎯 Sagem RM50 AudioCenter Specific Features
 
-<img src="https://github.com/ThHanika/YCast/blob/master/webFrontEnd.png" width="400">
+### ✅ R50 Compatibility Fixes
+* **HTTP-only Stream Filtering** - Automatically filters HTTPS streams for R50 compatibility
+* **URL Encoding Fix** - Handles spaces and special characters in station names
+* **Case-insensitive Search** - Converts search terms for better Radio Browser results
+* **XML Response Optimization** - Simplified XML format for reliable R50 parsing
+* **Systemd Auto-start** - Automatic service startup on system boot
+
+### 🚀 Advanced Features (inherited)
+* Icons in favorites list 'stations.yml' (icon URL after pipe character '|')
+* Recently visited stations stored in /.ycast/recently.yml
+* Global filter/limits configurable file ./ycast/filter.yml
+* 5 frequently used radio stations selection (self-learning algorithm)
+* Web frontend for favorites setup
 
 YCast is a self hosted replacement for the vTuner internet radio service which many AVRs use.
 It emulates a vTuner backend to provide your AVR with the necessary information to play self defined categorized internet radio stations and listen to Radio stations listed in the [Community Radio Browser index](http://www.radio-browser.info).
@@ -30,11 +37,12 @@ YCast is for you if:
 
 ## Supported devices
 
-Theoretically, YCast should work for **most AVRs which support vTuner**.
-Most AVRs with network connectivity that were produced between 2011 and 2017 have vTuner support built-in.
+### 🎯 Primary Target Device
+* **✅ Sagem RM50 1&1 AudioCenter** - Fully tested and optimized
 
-Go ahead, test it with yours and kindly report the results back.
-Any reported device helps the community to see which AVRs work properly and which may have issues.
+### 🔧 Other vTuner Compatible Devices
+This fork maintains compatibility with most AVRs that support vTuner.
+Most AVRs with network connectivity produced between 2011 and 2017 have vTuner support.
 
 ### Confirmed working
 
@@ -67,6 +75,7 @@ Any reported device helps the community to see which AVRs work properly and whic
  * Yamaha RX-V_77 series (RX-V377, RX-V477, RX-V577, RX-V677, RX-V777)
  * Yamaha RX-V3067
  * Yamaha RX-V500D
+ * **Sagem RM50 1&1 AudioCenter** ✅
 
 ### Unconfirmed/Experimental
 
@@ -126,7 +135,23 @@ You can redirect all traffic destined for the original request URL (e.g. `radioy
 __Attention__: Do not rewrite the requests transparently. YCast expects the complete URL (i.e. including `/ycast` or `/setupapp`). It also need an intact `Host` header; so if you're proxying YCast you need to pass the original header on. For Nginx, this can be accomplished with `proxy_set_header Host $host;`.
 
 In case you are using (or plan on using) Nginx to proxy requests, have a look at [this example](examples/nginx-ycast.conf.example).
-This can be used together with [this systemd service example](examples/ycast.service.example_ycast) for a fully functional deployment.
+This can be used together with [this systemd service example](examples/ycast.service.example) for a fully functional deployment.
+
+#### Systemd Service (Recommended for R50)
+
+For automatic startup on boot (especially important for R50 AudioCenter):
+
+```bash
+# Copy the service file
+sudo cp examples/ycast.service.example /etc/systemd/system/ycast.service
+
+# Enable and start the service
+sudo systemctl enable ycast
+sudo systemctl start ycast
+
+# Check status
+sudo systemctl status ycast
+```
 
 #### With WSGI
 

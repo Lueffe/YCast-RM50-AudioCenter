@@ -103,6 +103,8 @@ GPL-3.0 License (same as original YCast)
 
 Based on [THanika/YCast](https://github.com/THanika/YCast) and original [milaq/YCast](https://github.com/milaq/YCast)
 
+**Repository:** https://github.com/Lueffe/YCast-RM50-AudioCenter
+
 Special thanks to the Radio Browser community for the excellent API.
 
 ---

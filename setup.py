@@ -6,15 +6,15 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='ycast',
+    name='ycast-rm50-audiocenter',
     version=ycast.__version__,
-    author='rakalex',
-    author_email='rak.alexei@gmail.com',
-    description='Self hosted vTuner internet radio service emulation',
+    author='Lueffe',
+    author_email='',
+    description='YCast fork optimized for Sagem RM50 1&1 AudioCenter devices',
     long_description=long_description,
     long_description_content_type="text/markdown",
     include_package_data=True,    
-    url='https://github.com/rakalex/YCast',
+    url='https://github.com/Lueffe/YCast-RM50-AudioCenter',
     entry_points={"console_scripts": ["ycast=ycast.__main__:launch_server"]},
     license='GPLv3',
     classifiers=[
@@ -30,6 +30,9 @@ setup(
     ],
     keywords=[
         'ycast',
+        'sagem',
+        'rm50',
+        'audiocenter',
         'streaming',
         'vtuner',
         'internet radio',
